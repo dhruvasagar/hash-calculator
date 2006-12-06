@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="javadoc" name="Hash Calculator">
+    <target name="javadoc">
+        <javadoc access="public" author="true" classpath="."
+            destdir="doc" nodeprecated="false" nodeprecatedlist="false"
+            noindex="false" nonavbar="false" notree="false"
+            packagenames="Source" sourcepath="." splitindex="true"
+            stylesheetfile="C:\Documents and Settings\Administrator\Desktop\Websphere Dump\Remote Workspace\mine\Hash Calculator\HelpContents\style.css"
+            use="true" version="true"/>
+    </target>
+</project>
