@@ -25,6 +25,7 @@ public class Images {
   public static final ImageIcon topicGif   = new ImageIcon("./images/topic.gif");
   public static final ImageIcon selectGif  = new ImageIcon("./images/openFolder.gif");
   public static final ImageIcon blankGif   = new ImageIcon("./images/blank.gif");
+  public static final ImageIcon md5Gif     = new ImageIcon("./images/md5.gif");
 
 }
 

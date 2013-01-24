@@ -1,4 +1,4 @@
-package hashcalculator;
+package hashcalculator.utils;
 
 import java.awt.Toolkit;
 import java.io.IOException;

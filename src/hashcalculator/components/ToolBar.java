@@ -1,12 +1,6 @@
-package hashcalculator;
+package hashcalculator.components;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowAdapter;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
@@ -15,18 +9,31 @@ import javax.swing.JComboBox;
 
 import hashcalculator.Images;
 import hashcalculator.HashCalculator;
+import hashcalculator.utils.ClipboardHelper;
 
 public class ToolBar extends JToolBar {
 
   private static final long serialVersionUID=0L;
 
-  public JComboBox algorithm;
+  private JButton clear;
+  private JButton save;
+  private JButton select;
+  private JButton copy;
+  private JButton paste;
+  private JButton modes;
+  private JButton calculate;
+  private JButton help;
+  private JButton about;
+  private JButton contact;
+  private JButton exit;
 
-  public String getAlgorithm() {
-    return algorithm.getSelectedItem().toString();
-  }
+  private JComboBox algorithm;
+
+  private final HashCalculator hc;
 
   public ToolBar(final HashCalculator hc) {
+    this.hc = hc;
+
     setFloatable(false);
     JButton btn=new JButton("", Images.clearGif);
     btn.setToolTipText("Click to clear everything");
@@ -37,6 +44,7 @@ public class ToolBar extends JToolBar {
         hc.clear();
       }
     });
+    this.clear = btn;
     add(btn);
 
     btn=new JButton("", Images.saveGif);
@@ -48,6 +56,7 @@ public class ToolBar extends JToolBar {
         hc.saveInFile();
       }
     });
+    this.save = btn;
     add(btn);
 
     btn=new JButton("", Images.selectGif);
@@ -59,6 +68,7 @@ public class ToolBar extends JToolBar {
         hc.selectFile();
       }
     });
+    this.select = btn;
     add(btn);
     addSeparator();
 
@@ -71,6 +81,7 @@ public class ToolBar extends JToolBar {
         hc.copyHash();			 
       }
     });
+    this.copy = btn;
     add(btn);
 
     btn=new JButton("", Images.pasteGif);
@@ -82,6 +93,7 @@ public class ToolBar extends JToolBar {
         hc.pasteCopiedText();
       }
     });
+    this.paste = btn;
     add(btn);
     addSeparator();
 
@@ -93,6 +105,7 @@ public class ToolBar extends JToolBar {
         hc.setMode();
       }
     });
+    this.modes = btn;
     add(btn);
     addSeparator();
 
@@ -104,6 +117,7 @@ public class ToolBar extends JToolBar {
         hc.calculate();
       }
     });
+    this.calculate = btn;
     add(btn);
     addSeparator();
 
@@ -115,6 +129,7 @@ public class ToolBar extends JToolBar {
         hc.getHelpContents();
       }			
     });
+    this.help = btn;
     add(btn);
 
     btn=new JButton("", Images.aboutGif);
@@ -125,6 +140,7 @@ public class ToolBar extends JToolBar {
         hc.getAboutHC();
       }				
     });
+    this.about = btn;
     add(btn);
 
     btn=new JButton("", Images.contactGif);
@@ -135,6 +151,7 @@ public class ToolBar extends JToolBar {
         hc.getContactInfo();
       }				
     });
+    this.contact = btn;
     add(btn);
 
     addSeparator();
@@ -158,7 +175,20 @@ public class ToolBar extends JToolBar {
       {
         hc.exit();
       }
-      });
+    });
+    this.exit = btn;
     add(btn);
+  }
+
+  public String getAlgorithm() {
+    return algorithm.getSelectedItem().toString();
+  }
+
+  public void setButtonsEnabled() {
+    this.clear.setEnabled(!hc.getUserText().equals("") || !hc.getHashText().equals(""));
+    this.save.setEnabled(!hc.getHashText().equals(""));
+    this.select.setEnabled(!hc.isTextMode());
+    this.copy.setEnabled(!hc.getHashText().equals(""));
+    this.paste.setEnabled(hc.isTextMode() && !ClipboardHelper.pasteString().equals(""));
   }
 }

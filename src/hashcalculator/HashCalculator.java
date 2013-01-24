@@ -92,8 +92,18 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.ParseException;
+
 import hashcalculator.Images;
-import hashcalculator.ToolBar;
+import hashcalculator.utils.ClipboardHelper;
+import hashcalculator.components.ToolBar;
+import hashcalculator.components.MenuBar;
 
 /**
  * @author Dhruva Sagar
@@ -131,7 +141,7 @@ public class HashCalculator extends JFrame {
   private MessageDigest md;
 
   private ToolBar toolBar;
-  private JMenuBar menuBar;
+  private MenuBar menuBar;
 
   private final JPopupMenu myContextMenu = new JPopupMenu();
   private final JPopupMenu textFieldContextMenu= new JPopupMenu();
@@ -150,8 +160,7 @@ public class HashCalculator extends JFrame {
    * The Constructor where all the GUI is build and added.
    * created on Nov 20, 2006 8:53:26 PM
    */
-  public HashCalculator()
-  {
+  public HashCalculator() {
     setTitle("The - MD2 - Hash Calculator : "  +  ((textMode)?"Text":"File")  +  " Mode");
     setSize(600,200);
     setResizable(false);
@@ -182,10 +191,9 @@ public class HashCalculator extends JFrame {
 
     calcHash=new JButton("Caculate Hash", Images.calcGif);
     calcHash.addActionListener(new ActionListener()	{
-      public void actionPerformed(ActionEvent ae)
-    {
-      calculate();
-    }	
+      public void actionPerformed(ActionEvent ae) {
+        calculate();
+      }
     });
     calcHash.setMnemonic('C');
     calcHash.setToolTipText("Click to calculate the " + toolBar.getAlgorithm() + " Hash");
@@ -211,10 +219,9 @@ public class HashCalculator extends JFrame {
     chooseFile.setToolTipText("Click to select the File");
     chooseFile.setVisible(!textMode);
     chooseFile.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      selectFile();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        selectFile();
+      }
     });
     chooseFile.setVisible(!textMode);
     sel.add(chooseFile);
@@ -230,7 +237,7 @@ public class HashCalculator extends JFrame {
       public void mouseReleased(MouseEvent e) { checkPopup(e); }
       private void checkPopup(MouseEvent e) {
         if (e.isPopupTrigger(  )) {
-          setMyMenuBarEnabled();
+          menuBar.setItemsEnabled();
           setMyContextMenuEnabled();
           myContextMenu.show(e.getComponent(  ), e.getX(  ), e.getY(  ));
         }
@@ -260,7 +267,6 @@ public class HashCalculator extends JFrame {
     statusBar.add(spl);
 
     contentPane.add(statusBar,BorderLayout.SOUTH);
-
   }
 
   /**
@@ -291,17 +297,13 @@ public class HashCalculator extends JFrame {
           status.setText("Calculating, Please wait...");
           getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
           md=MessageDigest.getInstance(toolBar.getAlgorithm());
-          if(userText.getText().equals(""))
-          {
+          if(userText.getText().equals("")) {
             if(textMode)
               status.setText("Please fill in the text to be hashed...") ;
             else
               status.setText("Please select the File to be hashed...");
-          }
-          else
-          {
-            if(textMode)
-            {
+          } else {
+            if(textMode) {
               buffer=userText.getText().getBytes();
               md.update(buffer);
               digest=md.digest();
@@ -313,18 +315,15 @@ public class HashCalculator extends JFrame {
                 statusProgressBar.update(statusProgressBar.getGraphics());
                 int b = digest[i] & 0xff;
                 if (Integer.toHexString(b).length() == 1) hex = hex  +  "0";
-                hex  = hex  +  Integer.toHexString(b);										
+                hex  = hex + Integer.toHexString(b);										
               }		
               hashText.setText(toolBar.getAlgorithm()  +  " Hash: "  +  hex);
               ClipboardHelper.copyString(hex);
               status.setText(toolBar.getAlgorithm()  +  " Hash copied to ClipBoard");
-            }
-            else
-            {
+            } else {
               FileInputStream in=new FileInputStream(userText.getText());
               int length=0,total=in.available(),readPercentage=0,lenRead=0,calcPercentage=0;
-              while((length=in.read(buffer))!=-1)
-              {	
+              while((length=in.read(buffer))!=-1) {	
                 lenRead += length;
                 readPercentage=((lenRead*74)/total);
                 statusProgressBar.setValue(readPercentage);
@@ -333,22 +332,21 @@ public class HashCalculator extends JFrame {
               }
               digest=md.digest();
               hex="";
-              for (int i = 0; i < digest.length; i++)
-              {
+              for (int i = 0; i < digest.length; i++) {
                 calcPercentage=readPercentage + (((i + 1)*26)/digest.length);
                 statusProgressBar.setValue(calcPercentage);
                 statusProgressBar.update(statusProgressBar.getGraphics());
                 int b = digest[i] & 0xff;
                 if (Integer.toHexString(b).length() == 1) hex = hex  +  "0";
-                hex  = hex  +  Integer.toHexString(b);
+                hex  = hex + Integer.toHexString(b);
               }
               hashText.setText(toolBar.getAlgorithm()  +  " Hash: "  +  hex);
               ClipboardHelper.copyString(hex);
               status.setText(toolBar.getAlgorithm()  +  " Hash copied to ClipBoard");
               in.close();
             }
-            setMyMenuBarEnabled();
-            setMyToolBarButtonsEnabled();
+            menuBar.setItemsEnabled();
+            toolBar.setButtonsEnabled();
             setTextFieldContextMenuEnabled();
           }
         } catch (NoSuchAlgorithmException e) {
@@ -377,13 +375,12 @@ public class HashCalculator extends JFrame {
    * Method to clear the Hash Calculator screen's components.
    * created : Nov 20, 2006 9:02:47 PM
    */
-  public void clear()
-  {
+  public void clear() {
     userText.setText("");
     hashText.setText("");
     statusProgressBar.setValue(0);
-    setMyMenuBarEnabled();
-    setMyToolBarButtonsEnabled();
+    menuBar.setItemsEnabled();
+    toolBar.setButtonsEnabled();
     setTextFieldContextMenuEnabled();
     status.setText((textMode)?"Enter Text in Text Field to calculate Hash":"Select the file to be Hashed");					
   }
@@ -392,50 +389,51 @@ public class HashCalculator extends JFrame {
    * Method to copy the calculated Hash into Clip Board.
    * created : Nov 20, 2006 9:02:43 PM
    */
-  public void copyHash()
-  {
-    if(!userText.getText().equals(""))
-    {
+  public void copyHash() {
+    if(!userText.getText().equals("")) {
       ClipboardHelper.copyString(hex);
       status.setText("Hash Copied to Clip Board");
-    } 
-    else
+    } else {
       status.setText("Enter Text in Text Field to calculate Hash first");
+    }
   }
 
   /**
    * Method to exit the Application, if the user confirms.
    * created : Nov 20, 2006 9:02:06 PM
    */
-  public void exit()
-  {
+  public void exit() {
     int option=JOptionPane.showConfirmDialog(me,"Are you sure you want to exit?","Confirmation",JOptionPane.OK_CANCEL_OPTION);
-    if(option==JOptionPane.OK_OPTION)
-    {	dispose();System.exit(0); } 
-    else
+    if(option==JOptionPane.OK_OPTION) {
+      dispose();System.exit(0);
+    } else {
       status.setText("Cancelled Exit"); 		
+    }
   }
 
   /**
    * Method to get information about Hash Calculator.
    * created : Nov 20, 2006 9:02:50 PM
    */
-  public void getAboutHC()
-  {
-    JOptionPane.showMessageDialog(me,"<html>" +
-        "<font face='Comic Sans MS'>" +
-        "<table border='0' cellspacing='0' cellpadding='0'>"  + 			"<td><img src=" + getClass().getResource("../images/md5.gif") + "></td>"  + 			"<td width='25'></td>"  + 			"<td><font color='blue' size='5'>Hash Calculator " + version + "</font></td>"  + 			"</table><font><br>" +
-        "<hr>" +
-        "<center>It calculates the<br>" +
-        "MD2<br>MD5<br>SHA-1<br>SHA-256<br>SHA-384<br>SHA-512<br>" +
+  public void getAboutHC() {
+    JOptionPane.showMessageDialog(me, "<html>" +
+        "<h1>" +
+          "<font face='Comic Sans MS' color='blue' size='5'>" +
+            "<center>Hash Calculator " + version + "</center>" +
+          "</font>" +
+        "</h1>" +
+        "<br><hr>" +
+        "<center>" +
+          "It calculates the <br> MD2 <br> MD5 <br> SHA-1 <br> SHA-256 <br> SHA-384 <br> SHA-512 <br>" +
         "</center>" +
         "Hash of a input text as Selected from the Combo Box<br>" +
         "in the screen and displays it in the following text field.<br><br>" +
         "It automatically copies the hash into the Clip Board.<br><br>" +
-        "<center>Made By:<br>" +
-        "<font size='4' color='red'>Dhruva Sagar</font></center><br>" +
-        "</font>" +
-        "</html>","About Hash Calculator",JOptionPane.PLAIN_MESSAGE);
+        "<center>" +
+          "Made By:<br>" +
+          "<font size='4' color='red'>Dhruva Sagar</font>" +
+          "</center><br>" +
+        "</html>", "About Hash Calculator", JOptionPane.PLAIN_MESSAGE, Images.md5Gif);
   }
 
   /**
@@ -575,8 +573,8 @@ public class HashCalculator extends JFrame {
         userText.setText(pasted);
       status.setText("Clip Board Contents Pasted into Text Field");
     }
-    setMyMenuBarEnabled();
-    setMyToolBarButtonsEnabled();
+    menuBar.setItemsEnabled();
+    toolBar.setButtonsEnabled();
     setTextFieldContextMenuEnabled();			
   }
 
@@ -940,10 +938,10 @@ public class HashCalculator extends JFrame {
       public void mouseClicked(MouseEvent e) { checkPopup(e); }
       public void mouseReleased(MouseEvent e) { checkPopup(e); }
       private void checkPopup(MouseEvent e) {
-        setMyMenuBarEnabled();
+        menuBar.setItemsEnabled();
         if (e.isPopupTrigger(  )) {
-          setMyMenuBarEnabled();
-          setMyToolBarButtonsEnabled();
+          menuBar.setItemsEnabled();
+          toolBar.setButtonsEnabled();
           setTextFieldContextMenuEnabled();
           myContextMenu.show(e.getComponent(  ), e.getX(  ), e.getY(  ));
         }
@@ -955,7 +953,7 @@ public class HashCalculator extends JFrame {
    * Method to cut text from Text Field
    * created : Dec 6, 2006 11:14:50 AM
    */
-  private void cutText()
+  public void cutText()
   {
     if(userText.getSelectedText()!=null)
     {
@@ -967,8 +965,8 @@ public class HashCalculator extends JFrame {
       ClipboardHelper.copyString(userText.getText());
       userText.setText("");
     }		
-    setMyMenuBarEnabled();
-    setMyToolBarButtonsEnabled();
+    menuBar.setItemsEnabled();
+    toolBar.setButtonsEnabled();
     setTextFieldContextMenuEnabled();
   }
 
@@ -1028,8 +1026,8 @@ public class HashCalculator extends JFrame {
       public void mouseReleased(MouseEvent e) { checkPopup(e); }
       private void checkPopup(MouseEvent e) {
         if (e.isPopupTrigger(  )) {
-          setMyMenuBarEnabled();
-          setMyToolBarButtonsEnabled();
+          menuBar.setItemsEnabled();
+          toolBar.setButtonsEnabled();
           setTextFieldContextMenuEnabled();
           if(textMode) textFieldContextMenu.show(e.getComponent(  ), e.getX(  ), e.getY(  ));
         }
@@ -1038,250 +1036,44 @@ public class HashCalculator extends JFrame {
 
     userText.addKeyListener(new KeyListener(){
       public void keyTyped(KeyEvent arg0) {
-        setMyMenuBarEnabled();
-        setMyToolBarButtonsEnabled();
+        menuBar.setItemsEnabled();
+        toolBar.setButtonsEnabled();
         setTextFieldContextMenuEnabled();
       }
 
       public void keyPressed(KeyEvent arg0) {
-        setMyMenuBarEnabled();
-        setMyToolBarButtonsEnabled();
+        menuBar.setItemsEnabled();
+        toolBar.setButtonsEnabled();
         setTextFieldContextMenuEnabled();
       }
 
       public void keyReleased(KeyEvent arg0) {
-        setMyMenuBarEnabled();
-        setMyToolBarButtonsEnabled();
+        menuBar.setItemsEnabled();
+        toolBar.setButtonsEnabled();
         setTextFieldContextMenuEnabled();
       }			
     });
   }
 
   /**
-   * Method to set the Menu Bar Item's Enabled.
-   * created : Nov 30, 2006 4:26:44 PM
-   */
-  private void setMyMenuBarEnabled()
-  {
-    JMenuItem item=(JMenuItem)menuBar.getSubElements()[0].getSubElements()[0].getSubElements()[0]; //Clear
-    item.setEnabled(!userText.getText().equals("")||!hashText.getText().equals(""));
-    item=(JMenuItem)menuBar.getSubElements()[0].getSubElements()[0].getSubElements()[1]; //Save
-    item.setEnabled(!hashText.getText().equals(""));
-    item=(JMenuItem)menuBar.getSubElements()[0].getSubElements()[0].getSubElements()[2]; //Select File
-    item.setEnabled(!textMode);
-    item=(JMenuItem)menuBar.getSubElements()[1].getSubElements()[0].getSubElements()[0]; //Edit Text Menu
-    item.setEnabled(textMode);
-    item=(JMenuItem)menuBar.getSubElements()[1].getSubElements()[0].getSubElements()[0].getSubElements()[0].getSubElements()[0];//Cut
-    item.setEnabled(!userText.getText().equals(""));
-    item=(JMenuItem)menuBar.getSubElements()[1].getSubElements()[0].getSubElements()[0].getSubElements()[0].getSubElements()[1];//Copy
-    item.setEnabled(!userText.getText().equals(""));
-    item=(JMenuItem)menuBar.getSubElements()[1].getSubElements()[0].getSubElements()[0].getSubElements()[0].getSubElements()[2]; //Paste
-    item.setEnabled(!ClipboardHelper.pasteString().equals("")&&textMode);
-    item=(JMenuItem)menuBar.getSubElements()[1].getSubElements()[0].getSubElements()[1];//Copy Hash
-    item.setEnabled(!hashText.getText().equals(""));
-  }
-
-  /**
    * Method to set application MenuBar.
    * created : Nov 20, 2006 9:02:33 PM
    */
-  private void setMyMenuBar()
-  {
-    menuBar=new JMenuBar();
-    JMenu menu=new JMenu("File");
-    menu.setMnemonic('F');
-    JMenuItem item=new JMenuItem("Clear",Images.clearGif);
-    item.setEnabled(false);
-    item.setMnemonic('C');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      clear();
-    }
-    });
-    menu.add(item);
-
-    item=new JMenuItem("Save",Images.saveGif);
-    item.setMnemonic('S');
-    item.setEnabled(false);
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      saveInFile();
-    }
-    });
-    menu.add(item);
-
-    item=new JMenuItem("Select File",Images.selectGif);
-    item.setMnemonic('F');
-    item.setEnabled(false);
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      selectFile();
-    }
-    });
-    menu.add(item);
-
-    menu.addSeparator();
-
-    item=new JMenuItem("Calculate",Images.calcGif);
-    item.setMnemonic('A');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      calculate();
-    }
-    });
-    menu.add(item);
-
-    menu.addSeparator();
-
-    item=new JMenuItem("Exit",Images.exitGif);
-    item.setMnemonic('X');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      exit();
-    }
-    });		
-    menu.add(item);
-
-    menuBar.add(menu);
-
-    menu=new JMenu("Edit");
-    menu.setMnemonic('E');
-
-    JMenu menu1=new JMenu("Edit Text Field");
-    menu1.setMnemonic('E');
-    item = new JMenuItem("Cut",Images.cutGif);
-    item.setEnabled(false);
-    item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      cutText();
-    }
-    });
-    menu1.add(item);
-
-    item = new JMenuItem("Copy",Images.copyGif);
-    item.setEnabled(false);
-    item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      ClipboardHelper.copyString(userText.getText());
-    }
-    });
-    menu1.add(item);
-
-    item = new JMenuItem("Paste",Images.pasteGif);
-    item.setEnabled(!ClipboardHelper.pasteString().equals(""));
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      pasteCopiedText();
-    }
-    });
-    menu1.add(item);
-
-    menu.add(menu1);
-
-    item=new JMenuItem("Copy Hash",Images.copyGif);
-    item.setEnabled(false);
-    item.setMnemonic('C');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      copyHash();
-    }
-    });
-    menu.add(item);
-
-    menu.addSeparator();
-
-    item=new JMenuItem("Modes",Images.modesGif);
-    item.setMnemonic('M');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      setMode();
-    }
-    });
-    menu.add(item);
-
-    menu.addSeparator();
-
-    menuBar.add(menu);
-
-    menu=new JMenu("Help");
-    menu.setMnemonic('H');
-    item=new JMenuItem("Help Contents",Images.helpGif);
-    item.setMnemonic('C');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      getHelpContents();
-    }			
-    });
-    menu.add(item);
-
-    item=new JMenuItem("About Hash Calculator",Images.aboutGif);
-    item.setMnemonic('A');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      getAboutHC();
-    }				
-    });
-    menu.add(item);
-
-    menu.addSeparator();
-
-    item=new JMenuItem("Contact Author",Images.contactGif);
-    item.setMnemonic('O');
-    item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      getContactInfo();
-    }				
-    });
-    menu.add(item);
-
-    menuBar.add(menu);		
-
+  private void setMyMenuBar() {
+    menuBar = new MenuBar(this);
     setJMenuBar(menuBar);
-  }
-
-  /**
-   * Method to set the ToolBar Button's Enabled.
-   * created : Nov 30, 2006 4:25:40 PM
-   */
-  private void setMyToolBarButtonsEnabled()
-  {
-    JButton btn=(JButton)toolBar.getComponents()[0];//clear
-    btn.setEnabled(!userText.getText().equals("") || !hashText.getText().equals(""));
-    btn=(JButton)toolBar.getComponents()[1];		//save
-    btn.setEnabled(!hashText.getText().equals(""));
-    btn=(JButton)toolBar.getComponents()[2];		//select file
-    btn.setEnabled(!textMode);
-    btn=(JButton)toolBar.getComponents()[4];		//copy hash
-    btn.setEnabled(!hashText.getText().equals(""));
-    btn=(JButton)toolBar.getComponents()[5];		//paste
-    btn.setEnabled(textMode && !ClipboardHelper.pasteString().equals(""));
   }
 
   /**
    * Method to set application ToolBar.
    * created : Nov 20, 2006 9:02:28 PM
    */
-  private void setMyToolBar()
-  {
+  private void setMyToolBar() {
     toolBar = new ToolBar(this);
     contentPane.add(toolBar, BorderLayout.NORTH);
   }
 
-  private static void showSplash(final HashCalculator hc)
-  {
+  private static void showSplash(final HashCalculator hc) {
     final JWindow splashWin=new JWindow();
     splashWin.setAlwaysOnTop(true);
     splashWin.setSize(250,130);
@@ -1323,25 +1115,21 @@ public class HashCalculator extends JFrame {
       int count=0;
       int progress=0;
       long start = System.currentTimeMillis(),end=0;
-      public void actionPerformed(ActionEvent e)
-      {
+      public void actionPerformed(ActionEvent e) {
         pb.setValue(progress);
         text.setText(text.getText() + ".");
         count++;
-        if(count==4)
-        {
+        if(count==4) {
           text.setText("Loading");
           count=0;
         }
         end = System.currentTimeMillis();
         progress += (end-start)/400;
-        if(end-start > 6000)
-        {
+        if(end-start > 6000) {
           hc.setVisible(true);
           hc.setEnabled(false);
         }
-        if(end-start > 7500)
-        {
+        if(end-start > 7500) {
           endTimer();
           splashWin.dispose();
           hc.setEnabled(true);
@@ -1353,8 +1141,7 @@ public class HashCalculator extends JFrame {
     splashWin.setVisible(true);
   }
 
-  private static void endTimer()
-  {
+  private static void endTimer() {
     calcTimer.stop();
   }	
 
@@ -1362,11 +1149,58 @@ public class HashCalculator extends JFrame {
     status.setText(message);
   }
 
+  public String getUserText() {
+    return this.userText.getText();
+  }
+
+  public String getHashText() {
+    return this.hashText.getText();
+  }
+
   /**
    * Main method which instantiates the application and shows it.
    * created : Nov 20, 2006 9:02:09 PM
    */
   public static void main(String[] args) {
-    showSplash(new HashCalculator());		
+    boolean showSplash = true;
+
+    CommandLineParser parser = new BasicParser();
+    Option helpOption = new Option("h", "help", false, "Program Help.");
+    Options options = new Options();
+    options.addOption(helpOption);
+
+    Option authorOption = new Option("a", "author", false, "Program Author.");
+    options.addOption(authorOption);
+
+    Option debugOption = new Option("d", "debug", false, "Debug Mode.");
+    options.addOption(debugOption);
+
+    Option noSplashOption = new Option("ns", "no-splash", false, "Skip Splash Screen.");
+    options.addOption(noSplashOption);
+
+    try {
+      CommandLine cli = parser.parse(options, args);
+
+      if ( cli.hasOption(helpOption.getOpt()) ) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("HashCalculator [OPTIONS]", options);
+        return;
+      } else if ( cli.hasOption(authorOption.getOpt()) ) {
+      } else if ( cli.hasOption(debugOption.getOpt()) ) {
+        showSplash = false;
+      } else if ( cli.hasOption(noSplashOption.getOpt()) ) {
+        showSplash = false;
+      }
+
+      if ( showSplash ) {
+        showSplash(new HashCalculator());		
+      } else {
+        HashCalculator hc = new HashCalculator();
+        hc.setVisible(true);
+        hc.setEnabled(true);
+      }
+    } catch(ParseException pe) {
+      pe.printStackTrace();
+    }
   }
 }
