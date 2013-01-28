@@ -163,6 +163,7 @@ public class ToolBar extends JToolBar {
       {
         hc.setStatus(getAlgorithm() + " Hash Algorithm Selected");
         hc.setTitle("The - " + getAlgorithm() + " - Hash Calculator : " + ((hc.isTextMode()) ? "Text" : "File") + " Mode");
+          hc.setToolTips(getAlgorithm());
       }
     });
     add(algorithm);
