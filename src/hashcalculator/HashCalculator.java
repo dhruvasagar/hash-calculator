@@ -9,11 +9,7 @@
  * swing component, hence will run on any machine that
  * has JVM.
  * 
- * This has been developed using
- * Websphere Studio Application Developer (WSAD)
- * which is a (C) IBM Product.
- * 
- * It has been compiled using J2SDK v 1.5.09.
+ * It has been compiled using OpenJDK 1.6.0_24
  * 
  * For any queries or reporting any bugs please contact
  * Dhruva Sagar at dhruva[DOT]sagar[AT]gmail[DOT]com.
@@ -53,8 +49,6 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -93,6 +87,11 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.BasicParser;
@@ -103,6 +102,7 @@ import org.apache.commons.cli.ParseException;
 
 import hashcalculator.Images;
 import hashcalculator.utils.Logger;
+import hashcalculator.CalculateThread;
 import hashcalculator.components.MenuBar;
 import hashcalculator.components.ToolBar;
 import hashcalculator.utils.ClipboardHelper;
@@ -120,9 +120,6 @@ public class HashCalculator extends JFrame {
   private static final long serialVersionUID=0L; 
 
   private static final String version = "1.2";
-
-  private byte buffer[];
-  private byte digest[];
 
   private JLabel status;
   private ToolBar toolBar;
@@ -142,7 +139,6 @@ public class HashCalculator extends JFrame {
   private final JPopupMenu textFieldContextMenu= new JPopupMenu();
 
   private String hex = "";
-  private MessageDigest md;
   private boolean textMode = true;
   private final Hashtable<String, String> messages=new Hashtable<String, String>();
 
@@ -167,6 +163,14 @@ public class HashCalculator extends JFrame {
       chooseFile.setVisible(!isTextMode());
       clear();
     }
+  }
+
+  public void setStatusProgressBarValue(int value) {
+    this.statusProgressBar.setValue(value);
+  }
+
+  public void updateStatusProgressBar() {
+    this.statusProgressBar.update(this.statusProgressBar.getGraphics());
   }
 
   public String getAlgorithm() {
@@ -304,82 +308,17 @@ public class HashCalculator extends JFrame {
    */
   public void calculate()
   {
-    final Thread calcThread=new Thread() {
-      public void run() {
-        try {
-          buffer = new byte[8192];
-          digest = new byte[8192];		
-          statusProgressBar.setValue(0);
-          status.setText("Calculating, Please wait...");
-          getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-          md=MessageDigest.getInstance(getAlgorithm());
-          if(userText.getText().equals("")) {
-            if(textMode)
-              status.setText("Please fill in the text to be hashed...") ;
-            else
-              status.setText("Please select the File to be hashed...");
-          } else {
-            if(textMode) {
-              buffer=userText.getText().getBytes();
-              md.update(buffer);
-              digest=md.digest();
-              hex="";
-              int j=0;
-              for (int i = 0; i < digest.length; i++)
-              {
-                statusProgressBar.setValue(j += (i*100)/digest.length);
-                statusProgressBar.update(statusProgressBar.getGraphics());
-                int b = digest[i] & 0xff;
-                if (Integer.toHexString(b).length() == 1) hex = hex  +  "0";
-                hex  = hex + Integer.toHexString(b);										
-              }		
-              hashText.setText(getAlgorithm()  +  " Hash: "  +  hex);
-              ClipboardHelper.copyString(hex);
-              status.setText(getAlgorithm()  +  " Hash copied to ClipBoard");
-            } else {
-              FileInputStream in=new FileInputStream(userText.getText());
-              int length=0,total=in.available(),readPercentage=0,lenRead=0,calcPercentage=0;
-              while((length=in.read(buffer))!=-1) {	
-                lenRead += length;
-                readPercentage=((lenRead*74)/total);
-                statusProgressBar.setValue(readPercentage);
-                statusProgressBar.update(statusProgressBar.getGraphics());
-                md.update(buffer,0,length);
-              }
-              digest=md.digest();
-              hex="";
-              for (int i = 0; i < digest.length; i++) {
-                calcPercentage=readPercentage + (((i + 1)*26)/digest.length);
-                statusProgressBar.setValue(calcPercentage);
-                statusProgressBar.update(statusProgressBar.getGraphics());
-                int b = digest[i] & 0xff;
-                if (Integer.toHexString(b).length() == 1) hex = hex  +  "0";
-                hex  = hex + Integer.toHexString(b);
-              }
-              hashText.setText(getAlgorithm()  +  " Hash: "  +  hex);
-              ClipboardHelper.copyString(hex);
-              status.setText(getAlgorithm()  +  " Hash copied to ClipBoard");
-              in.close();
-            }
-            menuBar.setItemsEnabled();
-            toolBar.setButtonsEnabled();
-            setTextFieldContextMenuEnabled();
-          }
-        } catch (NoSuchAlgorithmException e) {
-          e.printStackTrace();
-        } catch (FileNotFoundException e) {
-          e.printStackTrace();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-        getRootPane().setCursor(Cursor.getDefaultCursor());
-      }
-    };
+    final ExecutorService service;
+    final Future<String> calculable;
+
+    service = Executors.newFixedThreadPool(1);
+    calculable = service.submit(new Calculable(this));
 
     try {
-      calcThread.setDaemon(true);
-      calcThread.start();
-      calcThread.join();
+      //calcThread.setDaemon(true);
+      //calcThread.start();
+      //calcThread.join();
+      hex = calculable.get();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -525,6 +464,7 @@ public class HashCalculator extends JFrame {
         return "Hash Files";
       }
     });
+
     fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
     if(!userText.getText().equals("")&&!hashText.getText().equals("")) {	
       try {
@@ -540,7 +480,7 @@ public class HashCalculator extends JFrame {
           if(option==JFileChooser.APPROVE_OPTION) {
             if(!fileChooser.getSelectedFile().exists()) {
               out=new PrintWriter(new FileOutputStream(fileName));
-              out.println(getAlgorithm()  +  " Hash of "  +  "\"" + userText.getText()  +  "\""  +  " is:"  +  hex);
+              out.println(getAlgorithm() + " Hash of " + "\"" + userText.getText() + "\"" + " is:" + hex);
               out.close();
               status.setText(fileName + " saved");
               done=true;
@@ -553,7 +493,7 @@ public class HashCalculator extends JFrame {
 
                 if(option == JOptionPane.YES_OPTION) {
                   out=new PrintWriter(new FileOutputStream(fileName)); 
-                  out.println(getAlgorithm()  +  " Hash of "  +  "\""  +  userText.getText()  +  "\""  +  " is:"  +  hex);
+                  out.println(getAlgorithm() + " Hash of " + "\"" + userText.getText() + "\"" + " is:" + hex);
                   out.close();
                   status.setText(fileName + " saved");
                   done=true;
@@ -567,7 +507,7 @@ public class HashCalculator extends JFrame {
                   out=new PrintWriter(new FileOutputStream(fileName));
                   int i=0;
                   while(i<data.size()) {out.println(data.get(i).toString());i++;} 
-                  out.println(getAlgorithm()  +  " Hash of "  +  "\""  +  userText.getText()  +  "\""  +  " is:"  +  hex);
+                  out.println(getAlgorithm() + " Hash of " + "\"" + userText.getText() + "\"" + " is:" + hex);
                   out.close();
                   status.setText(fileName + " saved");
                   done=true;
@@ -673,10 +613,9 @@ public class HashCalculator extends JFrame {
   {
     JMenuItem item=new JMenuItem("Calculate",Images.calcGif);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      calculate();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        calculate();
+      }
     });
     myContextMenu.add(item);
     myContextMenu.addSeparator();
@@ -684,30 +623,27 @@ public class HashCalculator extends JFrame {
     item = new JMenuItem("Clear",Images.clearGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      clear();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        clear();
+      }
     });
     myContextMenu.add(item);
 
     item = new JMenuItem("Save",Images.saveGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      saveInFile();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        saveInFile();
+      }
     });
     myContextMenu.add(item);
 
     item = new JMenuItem("Select File",Images.selectGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      selectFile();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        selectFile();
+      }
     });
     myContextMenu.add(item);
     myContextMenu.addSeparator();
@@ -716,30 +652,27 @@ public class HashCalculator extends JFrame {
     item = new JMenuItem("Cut", Images.cutGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      cutText();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        cutText();
+      }
     });
     menu1.add(item);
 
     item = new JMenuItem("Copy", Images.copyGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      ClipboardHelper.copyString(userText.getText());
-    }
+      public void actionPerformed(ActionEvent ae) {
+        ClipboardHelper.copyString(userText.getText());
+      }
     });
     menu1.add(item);
 
     item = new JMenuItem("Paste", Images.pasteGif);
     item.setEnabled(!ClipboardHelper.pasteString().equals(""));
     item.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-    {
-      pasteCopiedText();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        pasteCopiedText();
+      }
     });
     menu1.add(item);
 
@@ -748,20 +681,18 @@ public class HashCalculator extends JFrame {
     item = new JMenuItem("Copy Hash", Images.copyGif);
     item.setEnabled(false);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      copyHash();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        copyHash();
+      }
     });
     myContextMenu.add(item);
     myContextMenu.addSeparator();
 
     item = new JMenuItem("Modes", Images.modesGif);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      setMode();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        setMode();
+      }
     });
     myContextMenu.add(item);
 
@@ -769,10 +700,9 @@ public class HashCalculator extends JFrame {
 
     item = new JMenuItem("Exit",Images.exitGif);
     item.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent ae)
-    {
-      exit();
-    }
+      public void actionPerformed(ActionEvent ae) {
+        exit();
+      }
     });
     myContextMenu.add(item);
 
@@ -920,8 +850,8 @@ public class HashCalculator extends JFrame {
     new SplashScreen(hc);
   }
 
-  public void setToolTips(String algorithm) {
-    calcHash.setToolTipText("Click to calculate the " + algorithm + " Hash");
+  public void updateToolTips() {
+    calcHash.setToolTipText("Click to calculate the " + getAlgorithm() + " Hash");
   }
 
   public void setStatus(String message) {
@@ -934,6 +864,16 @@ public class HashCalculator extends JFrame {
 
   public String getHashText() {
     return this.hashText.getText();
+  }
+
+  public void setHashText(String text) {
+    this.hashText.setText(text);
+  }
+
+  public void updateUI() {
+    this.menuBar.setItemsEnabled();
+    this.toolBar.setButtonsEnabled();
+    this.setTextFieldContextMenuEnabled();
   }
 
   /**

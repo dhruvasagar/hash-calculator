@@ -39,8 +39,7 @@ public class ToolBar extends JToolBar {
     btn.setToolTipText("Click to clear everything");
     btn.setEnabled(false);
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.clear();
       }
     });
@@ -51,8 +50,7 @@ public class ToolBar extends JToolBar {
     btn.setEnabled(false);
     btn.setToolTipText("Click to save the result into a file");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.saveInFile();
       }
     });
@@ -63,8 +61,7 @@ public class ToolBar extends JToolBar {
     btn.setEnabled(false);
     btn.setToolTipText("Click to select the file to Hash");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.selectFile();
       }
     });
@@ -76,8 +73,7 @@ public class ToolBar extends JToolBar {
     btn.setEnabled(false);
     btn.setToolTipText("Click to copy the hash");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.copyHash();			 
       }
     });
@@ -88,8 +84,7 @@ public class ToolBar extends JToolBar {
     btn.setEnabled(!ClipboardHelper.pasteString().equals(""));
     btn.setToolTipText("Click to paste text from Clip Board");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.pasteCopiedText();
       }
     });
@@ -100,8 +95,7 @@ public class ToolBar extends JToolBar {
     btn=new JButton("", Images.modesGif);
     btn.setToolTipText("Click to select the Mode");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.setMode();
       }
     });
@@ -112,8 +106,7 @@ public class ToolBar extends JToolBar {
     btn=new JButton("", Images.calcGif);
     btn.setToolTipText("Click to calculate the Hash");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.calculate();
       }
     });
@@ -124,8 +117,7 @@ public class ToolBar extends JToolBar {
     btn=new JButton("", Images.helpGif);
     btn.setToolTipText("Click to get the Help Contents");
     btn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent ae)
-      {
+      public void actionPerformed(ActionEvent ae) {
         hc.getHelpContents();
       }			
     });
@@ -163,7 +155,7 @@ public class ToolBar extends JToolBar {
       {
         hc.setStatus(getAlgorithm() + " Hash Algorithm Selected");
         hc.setTitle("The - " + getAlgorithm() + " - Hash Calculator : " + ((hc.isTextMode()) ? "Text" : "File") + " Mode");
-          hc.setToolTips(getAlgorithm());
+        hc.updateToolTips();
       }
     });
     add(algorithm);
